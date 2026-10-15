@@ -1,5 +1,6 @@
 import asyncio
 import ipaddress
+import os
 import shutil
 from collections import deque
 from dataclasses import dataclass, field
@@ -7,11 +8,15 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
+from app_paths import ROOT_DIR
+
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-DOSSIER = Path("musique")
+DOSSIER = Path(os.getenv("MUSIC_DIR", str(ROOT_DIR / "musique"))).expanduser()
+if not DOSSIER.is_absolute():
+    DOSSIER = ROOT_DIR / DOSSIER
 EXTENSIONS = {".mp3", ".ogg", ".wav", ".flac", ".m4a", ".opus"}
 
 # Les flux distants : reconnexion auto + seuls les protocoles web sont autorisés
