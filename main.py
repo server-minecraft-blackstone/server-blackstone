@@ -68,6 +68,9 @@ class BlackstoneBot(commands.Bot):
                 except Exception:
                     logger.exception("Échec du chargement du cog %s", fichier.name)
 
+        # Le bot utilise exclusivement le préfixe ! : retire aussi les anciennes commandes slash.
+        self.tree.clear_commands(guild=None)
+
         # Une panne de synchronisation ne doit pas empêcher les commandes préfixées
         # et les événements du bot de démarrer.
         try:
@@ -143,7 +146,7 @@ class BlackstoneBot(commands.Bot):
             title="Aide — Blackstone",
             description=(
                 "Préfixe des commandes texte : `!`\n"
-                "Les commandes slash sont disponibles avec `/`.\n"
+                "Toutes les commandes utilisent le préfixe `!`.\n"
                 "Utilise `!help-all` pour obtenir la liste complète."
             ),
             color=discord.Color.blurple(),
@@ -162,15 +165,6 @@ class BlackstoneBot(commands.Bot):
             ]
             embed.add_field(name="Commandes avec !", value="\n".join(lignes)[:1024], inline=False)
 
-        commandes_slash = sorted(self.tree.get_commands(), key=lambda cmd: cmd.name)
-        if commandes_slash:
-            lignes = [
-                f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}"
-                for cmd in commandes_slash[:10]
-            ]
-            embed.add_field(name="Quelques commandes slash", value="\n".join(lignes)[:1024], inline=False)
-            if len(commandes_slash) > 10:
-                embed.set_footer(text="Utilise !help-all pour afficher toutes les commandes.")
         await ctx.send(embed=embed)
 
     @commands.command(
@@ -192,11 +186,6 @@ class BlackstoneBot(commands.Bot):
             for cmd in commandes_prefixe
         )
 
-        commandes_slash = sorted(self.tree.walk_commands(), key=lambda cmd: cmd.qualified_name)
-        lignes.extend(
-            f"`/{cmd.qualified_name}` — {cmd.description or 'Aucune description.'}"
-            for cmd in commandes_slash
-        )
 
         if not lignes:
             await ctx.send("Aucune commande enregistrée.")
@@ -223,7 +212,7 @@ class BlackstoneBot(commands.Bot):
                 color=discord.Color.blurple(),
             )
             embed.set_footer(
-                text=f"{len(lignes)} commande(s) au total • Préfixe texte : ! • Commandes slash : /"
+                text=f"{len(lignes)} commande(s) au total • Préfixe : !"
             )
             await ctx.send(embed=embed)
 
