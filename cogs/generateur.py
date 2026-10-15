@@ -13,7 +13,7 @@ try:
 except ImportError:  # l'IA est optionnelle : les modèles marchent sans
     anthropic = None
 
-MODELE_IA = os.getenv("CLAUDE_MODEL", "claude-sonnet-5-5")
+MODELE_IA = os.getenv("CLAUDE_MODEL", "claude-sonnet-5")
 
 RAISON = "Génération de serveur (bot)"
 PAUSE = 0.4  # secondes entre deux créations (évite de saturer l'API Discord)
