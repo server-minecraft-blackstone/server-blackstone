@@ -1,4 +1,5 @@
 import os
+import logging
 
 import discord
 from aiohttp import web
@@ -6,6 +7,12 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger("blackstone")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -23,25 +30,76 @@ async def demarrer_serveur_web():
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents, help_command=None)
 
     async def setup_hook(self):
         if os.getenv("PORT"):  # variable définie automatiquement par Render
             await demarrer_serveur_web()
-            print("Serveur web démarré sur le port", os.environ["PORT"])
+            logger.info("Serveur web démarré sur le port %s", os.environ["PORT"])
+
         # Charge chaque module ; si l'un plante, les autres démarrent quand même
         for fichier in sorted(os.listdir("cogs")):
             if fichier.endswith(".py"):
                 try:
                     await self.load_extension(f"cogs.{fichier[:-3]}")
-                    print(f"✅ {fichier} chargé")
-                except Exception as e:
-                    print(f"❌ {fichier} : {e!r}")
-        await self.tree.sync()  # enregistre les commandes slash
-        print("Commandes synchronisées")
+                    logger.info("Cog chargé : %s", fichier)
+                except Exception:
+                    logger.exception("Échec du chargement du cog %s", fichier)
+
+        try:
+            commandes = await self.tree.sync()
+            logger.info("%s commande(s) slash synchronisée(s)", len(commandes))
+        except Exception:
+            logger.exception("Échec de la synchronisation des commandes slash")
+            raise
 
     async def on_ready(self):
-        print(f"Connecté en tant que {self.user}")
+        logger.info("Connecté en tant que %s (ID: %s)", self.user, self.user.id)
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            return  # Ne pollue pas les salons pour les messages qui ne sont pas des commandes.
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"Argument manquant : `{ctx.prefix}{ctx.command.qualified_name} {error.param.name}`")
+            return
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send("Tu n'as pas la permission d'utiliser cette commande.")
+            return
+        logger.error(
+            "Erreur de commande !%s par %s dans le serveur %s",
+            ctx.command, ctx.author, getattr(ctx.guild, "id", "DM"),
+            exc_info=(type(error), error, error.__traceback__),
+        )
+        await ctx.send("Une erreur est survenue pendant l'exécution de la commande.")
+
+    @commands.command(name="help", aliases=["aide"], help="Affiche les commandes disponibles.")
+    async def help_prefix(self, ctx):
+        embed = discord.Embed(
+            title="Aide — Blackstone",
+            description="Préfixe des commandes texte : `!`\nLes commandes slash restent disponibles avec `/`.",
+            color=discord.Color.blurple(),
+        )
+        commandes_prefixe = sorted(
+            (cmd for cmd in self.commands if not cmd.hidden and cmd.name != "help"),
+            key=lambda cmd: cmd.name,
+        )
+        if commandes_prefixe:
+            embed.add_field(
+                name="Commandes avec !",
+                value="\n".join(f"`!{cmd.name}` — {cmd.help or 'Aucune description.'}" for cmd in commandes_prefixe),
+                inline=False,
+            )
+        commandes_slash = sorted(self.tree.get_commands(), key=lambda cmd: cmd.name)
+        if commandes_slash:
+            embed.add_field(
+                name="Commandes slash",
+                value="\n".join(f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}" for cmd in commandes_slash[:25]),
+                inline=False,
+            )
+            if len(commandes_slash) > 25:
+                embed.set_footer(text=f"{len(commandes_slash) - 25} autre(s) commande(s) slash non affichée(s).")
+        embed.set_footer(text="Si une commande ne répond pas, vérifie les permissions du bot et du salon.")
+        await ctx.send(embed=embed)
 
 
 token = os.getenv("DISCORD_TOKEN")
