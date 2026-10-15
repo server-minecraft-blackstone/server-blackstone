@@ -44,10 +44,11 @@ class BlackstoneBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         # Centralise les erreurs des commandes slash sans bloquer le bot.
         self.tree.on_error = self.on_app_command_error
+        self.web_runner: web.AppRunner | None = None
 
     async def setup_hook(self) -> None:
         if os.getenv("PORT"):
-            await demarrer_serveur_web()
+            self.web_runner = await demarrer_serveur_web()
             logger.info("Serveur web démarré sur le port %s", os.environ["PORT"])
 
         dossier_cogs = BASE_DIR / "cogs"
@@ -227,15 +228,20 @@ class BlackstoneBot(commands.Bot):
             await ctx.send(embed=embed)
 
 
-token = os.getenv("DISCORD_TOKEN")
-if not token:
-    raise SystemExit("DISCORD_TOKEN manquant : ajoute-le dans l'environnement de Render.")
+def main() -> None:
+    token = os.getenv("DISCORD_TOKEN")
+    if not token:
+        raise SystemExit("DISCORD_TOKEN manquant : ajoute-le dans l'environnement de Render.")
 
-bot = BlackstoneBot()
-try:
-    bot.run(token, log_handler=None)
-except discord.PrivilegedIntentsRequired as exc:
-    raise SystemExit(
-        "Active « Message Content Intent » et « Server Members Intent » "
-        "dans le Developer Portal (onglet Bot), puis redéploie."
-    ) from exc
+    bot = BlackstoneBot()
+    try:
+        bot.run(token, log_handler=None)
+    except discord.PrivilegedIntentsRequired as exc:
+        raise SystemExit(
+            "Active « Message Content Intent » et « Server Members Intent » "
+            "dans le Developer Portal (onglet Bot), puis redéploie."
+        ) from exc
+
+
+if __name__ == "__main__":
+    main()
