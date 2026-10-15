@@ -10,7 +10,7 @@ from discord.ext import commands
 
 # Listes prédéfinies : de la plus permissive à la plus stricte.
 LISTES_GROS_MOTS = {
-    "leger": {"connard", "connasse", "salope", "pute", "encule", "enculer", "fdp", "ntm", "viole", "violER".lower()},
+    "leger": {"connard", "connasse", "salope", "pute", "encule", "enculer", "fdp", "ntm", "viole", "violer"},
     "modere": {"con", "conne", "connard", "connasse", "salope", "pute", "encule",
                "enfoire", "fdp", "ntm", "merdeux", "raclure", "merde", "putain",
                "tg", "ta gueule", "nique ta mere", "trou du cul", "enculer", "encules",
