@@ -1,6 +1,10 @@
 # Blackstone — bot Discord
 
-Bot Discord en Python avec commandes slash et préfixées, modération, protection, musique et génération de structures de serveurs.
+Bot Discord en Python utilisant exclusivement des commandes slash, avec modération, protection, musique et génération de structures de serveurs.
+
+## Commandes Discord
+
+Toutes les fonctionnalités du bot sont accessibles avec des commandes slash (`/`). La commande `/aide` affiche la liste des commandes disponibles. Aucune commande textuelle avec préfixe `!` n'est prévue.
 
 ## Configuration
 

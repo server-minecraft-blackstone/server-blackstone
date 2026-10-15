@@ -27,8 +27,6 @@ class General(commands.Cog):
             f"{commande.description or 'Aucune description.'}"
             for commande in commandes
         ]
-        lignes.insert(0, "`!help` — Aide rapide")
-        lignes.insert(1, "`!help-all` — Liste complète des commandes")
         if not lignes:
             lignes = ["Aucune commande enregistrée pour le moment."]
 
@@ -58,7 +56,7 @@ class General(commands.Cog):
             color=discord.Color.blurple(),
         )
         if total is not None:
-            embed.set_footer(text=f"{total} entrée(s) • Préfixe texte : ! • Commandes slash : /")
+            embed.set_footer(text=f"{total} commande(s) slash disponible(s)")
         return embed
 
     @commands.Cog.listener()
