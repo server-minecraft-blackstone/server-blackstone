@@ -68,8 +68,7 @@ class BlackstoneBot(commands.Bot):
                 except Exception:
                     logger.exception("Échec du chargement du cog %s", fichier.name)
 
-        # Une panne de synchronisation ne doit pas empêcher les commandes préfixées
-        # et les événements du bot de démarrer.
+        # Une panne de synchronisation ne doit pas empêcher les événements du bot de démarrer.
         try:
             commandes = await self.tree.sync()
             logger.info("%s commande(s) slash synchronisée(s)", len(commandes))
@@ -97,7 +96,7 @@ class BlackstoneBot(commands.Bot):
 
         original = getattr(error, "original", error)
         logger.error(
-            "Erreur de commande !%s par %s dans le serveur %s",
+            "Erreur de commande préfixée inattendue %s par %s dans le serveur %s",
             getattr(ctx.command, "qualified_name", "inconnue"),
             ctx.author,
             getattr(ctx.guild, "id", "DM"),
@@ -136,96 +135,6 @@ class BlackstoneBot(commands.Bot):
                 await interaction.response.send_message(message, ephemeral=True)
         except discord.HTTPException:
             logger.debug("Impossible de signaler l'erreur slash à l'utilisateur.", exc_info=True)
-
-    @commands.command(name="help", aliases=["aide"], help="Affiche les commandes principales.")
-    async def help_prefix(self, ctx: commands.Context) -> None:
-        embed = discord.Embed(
-            title="Aide — Blackstone",
-            description=(
-                "Préfixe des commandes texte : `!`\n"
-                "Les commandes slash sont disponibles avec `/`.\n"
-                "Utilise `!help-all` pour obtenir la liste complète."
-            ),
-            color=discord.Color.blurple(),
-        )
-        commandes_prefixe = sorted(
-            (
-                cmd for cmd in self.commands
-                if not cmd.hidden and cmd.name not in ("help", "help-all")
-            ),
-            key=lambda cmd: cmd.name,
-        )
-        if commandes_prefixe:
-            lignes = [
-                f"`!{cmd.name}` — {cmd.help or 'Aucune description.'}"
-                for cmd in commandes_prefixe
-            ]
-            embed.add_field(name="Commandes avec !", value="\n".join(lignes)[:1024], inline=False)
-
-        commandes_slash = sorted(self.tree.get_commands(), key=lambda cmd: cmd.name)
-        if commandes_slash:
-            lignes = [
-                f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}"
-                for cmd in commandes_slash[:10]
-            ]
-            embed.add_field(name="Quelques commandes slash", value="\n".join(lignes)[:1024], inline=False)
-            if len(commandes_slash) > 10:
-                embed.set_footer(text="Utilise !help-all pour afficher toutes les commandes.")
-        await ctx.send(embed=embed)
-
-    @commands.command(
-        name="help-all",
-        aliases=["aide-tout"],
-        help="Affiche toutes les commandes, y compris les sous-commandes.",
-    )
-    async def help_all(self, ctx: commands.Context) -> None:
-        lignes = []
-        commandes_prefixe = sorted(
-            (
-                cmd for cmd in self.commands
-                if not cmd.hidden and cmd.name not in ("help", "help-all")
-            ),
-            key=lambda cmd: cmd.name,
-        )
-        lignes.extend(
-            f"`!{cmd.name}` — {cmd.help or 'Aucune description.'}"
-            for cmd in commandes_prefixe
-        )
-
-        commandes_slash = sorted(self.tree.walk_commands(), key=lambda cmd: cmd.qualified_name)
-        lignes.extend(
-            f"`/{cmd.qualified_name}` — {cmd.description or 'Aucune description.'}"
-            for cmd in commandes_slash
-        )
-
-        if not lignes:
-            await ctx.send("Aucune commande enregistrée.")
-            return
-
-        # Découpe aussi les lignes longues pour respecter la limite de 4096 caractères.
-        lots: list[list[str]] = []
-        lot: list[str] = []
-        taille = 0
-        for ligne in lignes:
-            ligne = ligne[:250]
-            if lot and (len(lot) >= 15 or taille + len(ligne) + 1 > 3500):
-                lots.append(lot)
-                lot, taille = [], 0
-            lot.append(ligne)
-            taille += len(ligne) + 1
-        if lot:
-            lots.append(lot)
-
-        for numero, elements in enumerate(lots, start=1):
-            embed = discord.Embed(
-                title=f"Toutes les commandes — Blackstone ({numero}/{len(lots)})",
-                description="\n".join(elements),
-                color=discord.Color.blurple(),
-            )
-            embed.set_footer(
-                text=f"{len(lignes)} commande(s) au total • Préfixe texte : ! • Commandes slash : /"
-            )
-            await ctx.send(embed=embed)
 
 
 def main() -> None:
