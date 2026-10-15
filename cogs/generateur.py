@@ -5,6 +5,8 @@ import re
 
 import aiosqlite
 import discord
+
+from app_paths import get_database_path
 from discord import app_commands
 from discord.ext import commands
 
@@ -403,7 +405,7 @@ class Generateur(commands.Cog):
         self.en_cours: set[int] = set()
 
     async def cog_load(self):
-        self.db = await aiosqlite.connect("data.db")
+        self.db = await aiosqlite.connect(get_database_path())
         await self.db.execute(
             "CREATE TABLE IF NOT EXISTS gen_elements ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, gen INTEGER NOT NULL, "
