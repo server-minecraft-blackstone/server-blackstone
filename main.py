@@ -72,7 +72,7 @@ class Bot(commands.Bot):
         )
         await ctx.send("Une erreur est survenue pendant l'exécution de la commande.")
 
-    @commands.command(name="help", aliases=["aide"], help="Affiche les commandes disponibles.")
+    @commands.command(name="help", aliases=["aide"], help="Affiche les commandes principales.")
     async def help_prefix(self, ctx):
         embed = discord.Embed(
             title="Aide — Blackstone",
@@ -80,7 +80,7 @@ class Bot(commands.Bot):
             color=discord.Color.blurple(),
         )
         commandes_prefixe = sorted(
-            (cmd for cmd in self.commands if not cmd.hidden and cmd.name != "help"),
+            (cmd for cmd in self.commands if not cmd.hidden and cmd.name not in ("help", "help-all")),
             key=lambda cmd: cmd.name,
         )
         if commandes_prefixe:
@@ -93,13 +93,47 @@ class Bot(commands.Bot):
         if commandes_slash:
             embed.add_field(
                 name="Commandes slash",
-                value="\n".join(f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}" for cmd in commandes_slash[:25]),
+                value="\n".join(f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}" for cmd in commandes_slash[:20]),
                 inline=False,
             )
-            if len(commandes_slash) > 25:
-                embed.set_footer(text=f"{len(commandes_slash) - 25} autre(s) commande(s) slash non affichée(s).")
-        embed.set_footer(text="Si une commande ne répond pas, vérifie les permissions du bot et du salon.")
+            if len(commandes_slash) > 20:
+                embed.set_footer(text="Utilise !help-all pour afficher toutes les commandes.")
         await ctx.send(embed=embed)
+
+    @commands.command(name="help-all", aliases=["aide-tout"], help="Affiche toutes les commandes, y compris les sous-commandes.")
+    async def help_all(self, ctx):
+        """Envoie la liste complète en plusieurs messages pour respecter les limites Discord."""
+        lignes = []
+        commandes_prefixe = sorted(
+            (cmd for cmd in self.commands if not cmd.hidden and cmd.name not in ("help", "help-all")),
+            key=lambda cmd: cmd.name,
+        )
+        lignes.extend(
+            f"`!{cmd.name}` — {cmd.help or 'Aucune description.'}"
+            for cmd in commandes_prefixe
+        )
+
+        commandes_slash = sorted(self.tree.walk_commands(), key=lambda cmd: cmd.qualified_name)
+        lignes.extend(
+            f"`/{cmd.qualified_name}` — {cmd.description or 'Aucune description.'}"
+            for cmd in commandes_slash
+        )
+
+        if not lignes:
+            await ctx.send("Aucune commande enregistrée.")
+            return
+
+        # Des lots de 15 lignes gardent les messages sous la limite d'un embed Discord.
+        lots = [lignes[i:i + 15] for i in range(0, len(lignes), 15)]
+        total = len(lots)
+        for numero, lot in enumerate(lots, start=1):
+            embed = discord.Embed(
+                title=f"Toutes les commandes — Blackstone ({numero}/{total})",
+                description="\n".join(lot),
+                color=discord.Color.blurple(),
+            )
+            embed.set_footer(text=f"{len(lignes)} commande(s) au total • Préfixe texte : ! • Commandes slash : /")
+            await ctx.send(embed=embed)
 
 
 token = os.getenv("DISCORD_TOKEN")
