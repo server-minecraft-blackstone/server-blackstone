@@ -8,8 +8,29 @@ from app_paths import get_database_path
 from discord import app_commands
 from discord.ext import commands
 
-# Mots interdits par défaut (modifiables par serveur avec /mot_ajouter et /mot_retirer)
-MOTS_DEFAUT = {"connard", "connasse", "salope", "pute", "encule", "fdp", "ntm"}
+# Listes prédéfinies : de la plus permissive à la plus stricte.
+LISTES_GROS_MOTS = {
+    "leger": {"connard", "connasse", "salope", "pute", "encule", "fdp", "ntm"},
+    "modere": {"con", "conne", "connard", "connasse", "salope", "pute", "encule",
+               "enfoire", "fdp", "ntm", "merdeux", "raclure"},
+    "strict": {"abruti", "idiot", "idiote", "debile", "imbecile", "cretin", "cretine",
+               "con", "conne", "connard", "connasse", "salope", "pute", "encule",
+               "enfoire", "ordure", "minable", "degenere", "attarde", "merdeux",
+               "raclure", "fdp", "ntm", "merde", "bordel"},
+    "tres_strict": {"abruti", "idiot", "idiote", "debile", "imbecile", "cretin", "cretine",
+                    "con", "conne", "connard", "connasse", "salope", "pute", "encule",
+                    "enfoire", "ordure", "minable", "degenere", "attarde", "merdeux",
+                    "raclure", "fdp", "ntm", "merde", "bordel", "putain", "chier",
+                    "chiant", "foutre", "ta gueule"},
+}
+NIVEAUX_GROS_MOTS = [
+    app_commands.Choice(name="Léger — insultes graves uniquement", value="leger"),
+    app_commands.Choice(name="Modéré — insultes courantes", value="modere"),
+    app_commands.Choice(name="Strict — insultes et vulgarités", value="strict"),
+    app_commands.Choice(name="Très strict — liste la plus large", value="tres_strict"),
+]
+NIVEAU_PAR_DEFAUT = "modere"
+MOTS_DEFAUT = LISTES_GROS_MOTS[NIVEAU_PAR_DEFAUT]
 
 LIEN = re.compile(r"https?://|www\.|discord\.gg/", re.IGNORECASE)
 
@@ -36,6 +57,7 @@ class Automod(commands.Cog):
         self.db = None
         self.regles: dict[int, set[str]] = {}  # salon_id -> règles interdites
         self.mots: dict[int, set[str]] = {}    # guild_id -> mots perso
+        self.niveaux: dict[int, str] = {}   # guild_id -> niveau de filtrage
 
     async def cog_load(self):
         self.db = await aiosqlite.connect(get_database_path())
@@ -47,6 +69,10 @@ class Automod(commands.Cog):
             "CREATE TABLE IF NOT EXISTS mots "
             "(guild_id INTEGER, mot TEXT, PRIMARY KEY (guild_id, mot))"
         )
+        await self.db.execute(
+            "CREATE TABLE IF NOT EXISTS niveaux_gros_mots "
+            "(guild_id INTEGER PRIMARY KEY, niveau TEXT NOT NULL)"
+        )
         await self.db.commit()
         async with self.db.execute("SELECT salon_id, regle FROM regles") as cur:
             async for salon_id, regle in cur:
@@ -54,6 +80,10 @@ class Automod(commands.Cog):
         async with self.db.execute("SELECT guild_id, mot FROM mots") as cur:
             async for guild_id, mot in cur:
                 self.mots.setdefault(guild_id, set()).add(mot)
+        async with self.db.execute("SELECT guild_id, niveau FROM niveaux_gros_mots") as cur:
+            async for guild_id, niveau in cur:
+                if niveau in LISTES_GROS_MOTS:
+                    self.niveaux[guild_id] = niveau
 
     async def cog_unload(self):
         await self.db.close()
@@ -68,8 +98,12 @@ class Automod(commands.Cog):
 
     # ---------- Détection ----------
 
+    def liste_active(self, guild_id: int) -> set[str]:
+        niveau = self.niveaux.get(guild_id, NIVEAU_PAR_DEFAUT)
+        return set(LISTES_GROS_MOTS[niveau]) | self.mots.get(guild_id, set())
+
     def contient_insulte(self, guild_id: int, texte: str) -> bool:
-        mots = MOTS_DEFAUT | self.mots.get(guild_id, set())
+        mots = self.liste_active(guild_id)
         texte = normaliser(texte)
         return any(re.search(rf"\b{re.escape(m)}\b", texte) for m in mots)
 
@@ -109,7 +143,7 @@ class Automod(commands.Cog):
 
     # ---------- Configuration par salon ----------
 
-    @app_commands.command(name="interdire", description="Interdit quelque chose dans un salon")
+    @app_commands.command(name="filtre_on", description="Interdit quelque chose dans un salon")
     @app_commands.describe(regle="Ce qui est interdit", salon="Le salon concerné")
     @app_commands.choices(regle=REGLES)
     @app_commands.guild_only()
@@ -125,7 +159,7 @@ class Automod(commands.Cog):
         self.regles.setdefault(salon.id, set()).add(regle.value)
         await interaction.response.send_message(f"🚫 {regle.name} interdites dans {salon.mention}.")
 
-    @app_commands.command(name="autoriser", description="Autorise quelque chose dans un salon")
+    @app_commands.command(name="filtre_off", description="Autorise quelque chose dans un salon")
     @app_commands.describe(regle="Ce qui est autorisé", salon="Le salon concerné")
     @app_commands.choices(regle=REGLES)
     @app_commands.guild_only()
@@ -140,7 +174,7 @@ class Automod(commands.Cog):
         self.regles.get(salon.id, set()).discard(regle.value)
         await interaction.response.send_message(f"✅ {regle.name} autorisées dans {salon.mention}.")
 
-    @app_commands.command(name="regles", description="Affiche les règles de chaque salon")
+    @app_commands.command(name="filtres", description="Affiche les règles de chaque salon")
     @app_commands.guild_only()
     async def regles_cmd(self, interaction: discord.Interaction):
         lignes = []
@@ -151,9 +185,53 @@ class Automod(commands.Cog):
         texte = "\n".join(lignes) or "Tout est autorisé partout pour l'instant."
         await interaction.response.send_message(texte, ephemeral=True)
 
+    # ---------- Configuration de la liste de gros mots ----------
+
+    @app_commands.command(
+        name="gros_mots",
+        description="Choisit la sévérité de la liste de gros mots du serveur",
+    )
+    @app_commands.describe(niveau="Liste à appliquer à la modération et à l'automodération")
+    @app_commands.choices(niveau=NIVEAUX_GROS_MOTS)
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def gros_mots_niveau(
+        self, interaction: discord.Interaction, niveau: app_commands.Choice[str]
+    ):
+        await self.db.execute(
+            "INSERT INTO niveaux_gros_mots (guild_id, niveau) VALUES (?, ?) "
+            "ON CONFLICT(guild_id) DO UPDATE SET niveau = excluded.niveau",
+            (interaction.guild_id, niveau.value),
+        )
+        await self.db.commit()
+        self.niveaux[interaction.guild_id] = niveau.value
+        await interaction.response.send_message(
+            f"Liste de gros mots réglée sur **{niveau.name}**. "
+            "Ce choix s'applique à l'automodération et à la détection d'insultes ciblées.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(name="gros_mots_aide", description="Affiche les niveaux de filtrage disponibles")
+    @app_commands.guild_only()
+    async def gros_mots_liste(self, interaction: discord.Interaction):
+        niveau = self.niveaux.get(interaction.guild_id, NIVEAU_PAR_DEFAUT)
+        descriptions = [
+            "• **Léger** : insultes graves uniquement",
+            "• **Modéré** : insultes courantes (niveau par défaut)",
+            "• **Strict** : insultes et vulgarités",
+            "• **Très strict** : liste la plus large",
+        ]
+        await interaction.response.send_message(
+            f"Niveau actuel : **{niveau.replace('_', ' ').capitalize()}**\n"
+            + "\n".join(descriptions)
+            + "\nChange avec /gros_mots.",
+            ephemeral=True,
+        )
+
     # ---------- Liste de mots ----------
 
-    @app_commands.command(name="mot_ajouter", description="Ajoute un mot à la liste d'insultes")
+    @app_commands.command(name="mot_add", description="Ajoute un mot à la liste d'insultes")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -166,7 +244,7 @@ class Automod(commands.Cog):
         self.mots.setdefault(interaction.guild_id, set()).add(mot)
         await interaction.response.send_message("Mot ajouté.", ephemeral=True)
 
-    @app_commands.command(name="mot_retirer", description="Retire un mot ajouté à la liste")
+    @app_commands.command(name="mot_del", description="Retire un mot ajouté à la liste")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)

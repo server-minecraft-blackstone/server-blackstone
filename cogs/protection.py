@@ -142,7 +142,10 @@ class Protection(commands.Cog):
 
         texte = nettoyer(message.content)
         automod = self.bot.get_cog("Automod")  # mots perso ajoutés avec /mot_ajouter
-        extra = frozenset(automod.mots.get(message.guild.id, set())) if automod else frozenset()
+        extra = frozenset(automod.liste_active(message.guild.id)) if automod else frozenset(INSULTES)
+        if automod:
+            # Conserve aussi les termes historiques de la protection.
+            extra = extra | frozenset(INSULTES)
 
         if detecte_menace(texte):
             await self.sanctionner(message, "menace")
@@ -248,7 +251,7 @@ class Protection(commands.Cog):
 
     # ---------- Commandes ----------
 
-    @app_commands.command(name="protection_config", description="Active/désactive la protection et choisis le salon de logs")
+    @app_commands.command(name="protect", description="Active/désactive la protection et choisis le salon de logs")
     @app_commands.describe(actif="Activer ou désactiver la protection", salon_logs="Salon où les alertes sont envoyées")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
@@ -273,7 +276,7 @@ class Protection(commands.Cog):
             ephemeral=True,
         )
 
-    @app_commands.command(name="avertissements", description="Affiche le nombre d'avertissements d'un membre")
+    @app_commands.command(name="warns", description="Affiche le nombre d'avertissements d'un membre")
     @app_commands.guild_only()
     @app_commands.default_permissions(moderate_members=True)
     @app_commands.checks.has_permissions(moderate_members=True)
@@ -283,7 +286,7 @@ class Protection(commands.Cog):
             f"{membre.mention} : {nb}/{SEUIL_AVERTISSEMENTS} avertissement(s).", ephemeral=True
         )
 
-    @app_commands.command(name="avertissements_reset", description="Remet à zéro les avertissements d'un membre")
+    @app_commands.command(name="warns_reset", description="Remet à zéro les avertissements d'un membre")
     @app_commands.guild_only()
     @app_commands.default_permissions(moderate_members=True)
     @app_commands.checks.has_permissions(moderate_members=True)
