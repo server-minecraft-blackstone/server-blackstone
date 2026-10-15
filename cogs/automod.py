@@ -10,19 +10,25 @@ from discord.ext import commands
 
 # Listes prédéfinies : de la plus permissive à la plus stricte.
 LISTES_GROS_MOTS = {
-    "leger": {"connard", "connasse", "salope", "pute", "encule", "fdp", "ntm"},
+    "leger": {"connard", "connasse", "salope", "pute", "encule", "enculer", "fdp", "ntm", "viole", "violER".lower()},
     "modere": {"con", "conne", "connard", "connasse", "salope", "pute", "encule",
                "enfoire", "fdp", "ntm", "merdeux", "raclure", "merde", "putain",
-               "tg", "ta gueule", "nique ta mere", "trou du cul"},
+               "tg", "ta gueule", "nique ta mere", "trou du cul", "enculer", "encules",
+               "va te faire", "va te faire foutre", "je vais te violer", "te violer",
+               "je la viole", "ta mere je la viole"},
     "strict": {"abruti", "idiot", "idiote", "debile", "imbecile", "cretin", "cretine",
                "con", "conne", "connard", "connasse", "salope", "pute", "encule",
                "enfoire", "ordure", "minable", "degenere", "attarde", "merdeux",
-               "raclure", "fdp", "ntm", "merde", "bordel"},
+               "raclure", "fdp", "ntm", "merde", "bordel", "enculer", "encules",
+               "va te faire", "va te faire foutre", "je vais te violer", "te violer",
+               "je la viole", "ta mere je la viole"},
     "tres_strict": {"abruti", "idiot", "idiote", "debile", "imbecile", "cretin", "cretine",
                     "con", "conne", "connard", "connasse", "salope", "pute", "encule",
                     "enfoire", "ordure", "minable", "degenere", "attarde", "merdeux",
                     "raclure", "fdp", "ntm", "merde", "bordel", "putain", "chier",
-                    "chiant", "foutre", "ta gueule"},
+                    "chiant", "foutre", "ta gueule", "enculer", "encules", "va te faire",
+                    "va te faire foutre", "je vais te violer", "te violer", "je la viole",
+                    "ta mere je la viole"},
 }
 NIVEAUX_GROS_MOTS = [
     app_commands.Choice(name="Léger — insultes graves uniquement", value="leger"),
@@ -114,8 +120,6 @@ class Automod(commands.Cog):
     async def verifier(self, message: discord.Message):
         if message.author.bot or not message.guild:
             return
-        if message.author.guild_permissions.manage_messages:
-            return  # l'équipe de modération n'est pas filtrée
         # Dans un fil de discussion, on utilise les règles du salon parent
         salon_id = getattr(message.channel, "parent_id", None) or message.channel.id
         # Le filtre d'insultes est global au serveur et ne dépend pas
