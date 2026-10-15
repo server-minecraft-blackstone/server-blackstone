@@ -5,6 +5,8 @@ import re
 
 import aiosqlite
 import discord
+
+from app_paths import get_database_path
 from discord import app_commands
 from discord.ext import commands
 
@@ -13,7 +15,7 @@ try:
 except ImportError:  # l'IA est optionnelle : les modèles marchent sans
     anthropic = None
 
-MODELE_IA = os.getenv("CLAUDE_MODEL", "claude-sonnet-5-5")
+MODELE_IA = os.getenv("CLAUDE_MODEL", "claude-sonnet-5")
 
 RAISON = "Génération de serveur (bot)"
 PAUSE = 0.4  # secondes entre deux créations (évite de saturer l'API Discord)
@@ -403,7 +405,7 @@ class Generateur(commands.Cog):
         self.en_cours: set[int] = set()
 
     async def cog_load(self):
-        self.db = await aiosqlite.connect("data.db")
+        self.db = await aiosqlite.connect(get_database_path())
         await self.db.execute(
             "CREATE TABLE IF NOT EXISTS gen_elements ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, guild_id INTEGER NOT NULL, gen INTEGER NOT NULL, "

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+data.db
+data.db-shm
+data.db-wal
+musique/
+.pytest_cache/

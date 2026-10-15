@@ -5,6 +5,8 @@ from typing import Optional
 
 import aiosqlite
 import discord
+
+from app_paths import get_database_path
 from discord import app_commands
 from discord.ext import commands
 
@@ -94,7 +96,7 @@ class Protection(commands.Cog):
         self.config: dict[int, dict] = {}  # guild_id -> {"actif": bool, "logs": int|None}
 
     async def cog_load(self):
-        self.db = await aiosqlite.connect("data.db")
+        self.db = await aiosqlite.connect(get_database_path())
         await self.db.execute(
             "CREATE TABLE IF NOT EXISTS protection "
             "(guild_id INTEGER PRIMARY KEY, actif INTEGER DEFAULT 1, logs_id INTEGER)"
