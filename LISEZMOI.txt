@@ -1,0 +1,2 @@
+Mets ici les fichiers audio (.mp3, .ogg, .wav, .flac, .m4a, .opus) dont tu as les droits.
+Ils apparaitront dans l'autocompletion de /jouer.
