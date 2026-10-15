@@ -9,6 +9,17 @@ import discord
 from discord.ext import commands
 
 
+async def _ctx_send(ctx: commands.Context, content=None, *, embed=None, embeds=None, view=None,
+                    delete_after=None, **kwargs):
+    options = dict(view=view, delete_after=delete_after, **kwargs)
+    if embed is not None:
+        options["embed"] = embed
+    if embeds is not None:
+        options["embeds"] = embeds
+    message = await ctx.send(content, **options)
+    return message
+
+
 class _Response:
     def __init__(self, interaction: "_ContextInteraction"):
         self.i = interaction
@@ -20,8 +31,10 @@ class _Response:
     async def send_message(self, content=None, *, embed=None, embeds=None, view=None,
                            ephemeral=False, delete_after=None, **kwargs):
         self._done = True
-        return await self.i.ctx.send(content, embed=embed, embeds=embeds, view=view,
-                                     delete_after=delete_after, **kwargs)
+        message = await _ctx_send(self.i.ctx, content, embed=embed, embeds=embeds,
+                                  view=view, delete_after=delete_after, **kwargs)
+        self.i.last_message = message
+        return message
 
     async def defer(self, *, ephemeral=False, thinking=False, **kwargs):
         self._done = True
@@ -29,7 +42,9 @@ class _Response:
 
     async def edit_message(self, *, content=None, embed=None, embeds=None, view=None, **kwargs):
         self._done = True
-        return await self.i.ctx.send(content, embed=embed, embeds=embeds, view=view, **kwargs)
+        message = await _ctx_send(self.i.ctx, content, embed=embed, embeds=embeds, view=view, **kwargs)
+        self.i.last_message = message
+        return message
 
 
 class _Followup:
@@ -53,12 +68,15 @@ class _ContextInteraction:
         self.response = _Response(self)
         self.followup = _Followup(self)
         self.command = None
+        self.last_message = None
 
     async def original_response(self):
-        return self.ctx.message
+        return self.last_message or self.ctx.message
 
     async def edit_original_response(self, *, content=None, embed=None, view=None, **kwargs):
-        return await self.ctx.send(content, embed=embed, view=view, **kwargs)
+        message = await _ctx_send(self.ctx, content, embed=embed, view=view, **kwargs)
+        self.last_message = message
+        return message
 
 
 async def _member(ctx: commands.Context, value: str) -> discord.Member:
