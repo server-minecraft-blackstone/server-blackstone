@@ -188,7 +188,7 @@ class Automod(commands.Cog):
     # ---------- Configuration de la liste de gros mots ----------
 
     @app_commands.command(
-        name="gros_mots_niveau",
+        name="gros_mots",
         description="Choisit la sévérité de la liste de gros mots du serveur",
     )
     @app_commands.describe(niveau="Liste à appliquer à la modération et à l'automodération")
@@ -212,7 +212,7 @@ class Automod(commands.Cog):
             ephemeral=True,
         )
 
-    @app_commands.command(name="gros_mots_liste", description="Affiche les niveaux de filtrage disponibles")
+    @app_commands.command(name="gros_mots_info", description="Affiche les niveaux de filtrage disponibles")
     @app_commands.guild_only()
     async def gros_mots_liste(self, interaction: discord.Interaction):
         niveau = self.niveaux.get(interaction.guild_id, NIVEAU_PAR_DEFAUT)
@@ -225,7 +225,7 @@ class Automod(commands.Cog):
         await interaction.response.send_message(
             f"Niveau actuel : **{niveau.replace('_', ' ').capitalize()}**\n"
             + "\n".join(descriptions)
-            + "\nChange avec /gros_mots_niveau.",
+            + "\nChange avec /gros_mots.",
             ephemeral=True,
         )
 
