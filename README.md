@@ -1,6 +1,21 @@
 # Blackstone — bot Discord
 
-Bot Discord en Python avec commandes slash et préfixées, modération, protection, musique et génération de structures de serveurs.
+Bot Discord en Python : toutes les commandes s'utilisent avec le préfixe `!` (les anciennes commandes slash sont retirées), avec modération, protection, musique et génération de structures de serveurs.
+
+
+## Commandes (préfixe `!`)
+
+- Aide : `!help`, `!help-all`
+- Modération : `!kick`, `!ban`, `!timeout`, `!clear`
+- Automodération : `!interdire`, `!autoriser`, `!regles`, `!mot_ajouter`, `!mot_retirer`
+- Protection : `!protection_config`, `!avertissements`, `!avertissements_reset`
+- Musique : `!rejoindre`, `!jouer`, `!pause`, `!reprendre`, `!passer`, `!stop`, `!quitter`, `!volume`, `!file`
+- Générateur : `!serveur_modeles`, `!serveur_modele`, `!serveur_demande`, `!serveur_annuler`
+- Latence : `!ping`
+
+Exemples : `!kick @membre raison`, `!timeout @membre 10`, `!clear 20`, `!jouer fichier.mp3`, `!volume 75`.
+
+Pour que le bot lise les commandes textuelles, active **Message Content Intent** dans le Discord Developer Portal. Le bot doit avoir les permissions correspondant aux commandes utilisées.
 
 ## Configuration
 
