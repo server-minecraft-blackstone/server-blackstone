@@ -37,7 +37,6 @@ class ExtensionTests(unittest.TestCase):
             "serveur_modeles", "serveur_modele", "serveur_demande", "serveur_annuler",
         }
         self.assertTrue(expected.issubset(names), f"Commandes manquantes : {expected - names}")
-        bot.loop.close()
 
     def test_all_server_templates_pass_validation(self):
         for key, modele in MODELES.items():
