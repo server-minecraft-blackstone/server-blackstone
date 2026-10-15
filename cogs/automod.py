@@ -114,14 +114,15 @@ class Automod(commands.Cog):
             return  # l'équipe de modération n'est pas filtrée
         # Dans un fil de discussion, on utilise les règles du salon parent
         salon_id = getattr(message.channel, "parent_id", None) or message.channel.id
-        regles = self.regles.get(salon_id)
-        if not regles:
-            return  # rien d'interdit ici
+        # Le filtre d'insultes est global au serveur : il ne dépend pas
+        # de l'activation du filtre de liens dans un salon.
+        regles = self.regles.get(salon_id, set())
 
         violation = None
         if "liens" in regles and LIEN.search(message.content):
             violation = "liens"
-        elif "insultes" in regles and self.contient_insulte(message.guild.id, message.content):
+        elif self.contient_insulte(message.guild.id, message.content):
+            # Détecte les insultes même sans mention ni ciblage explicite.
             violation = "insultes"
 
         if violation:
