@@ -146,7 +146,7 @@ class BlackstoneBot(commands.Bot):
             title="Aide — Blackstone",
             description=(
                 "Préfixe des commandes texte : `!`\n"
-                "Les commandes slash sont disponibles avec `/`.\n"
+                "Toutes les commandes utilisent le préfixe `!`.\n"
                 "Utilise `!help-all` pour obtenir la liste complète."
             ),
             color=discord.Color.blurple(),
@@ -165,15 +165,6 @@ class BlackstoneBot(commands.Bot):
             ]
             embed.add_field(name="Commandes avec !", value="\n".join(lignes)[:1024], inline=False)
 
-        commandes_slash = sorted(self.tree.get_commands(), key=lambda cmd: cmd.name)
-        if commandes_slash:
-            lignes = [
-                f"`/{cmd.name}` — {cmd.description or 'Aucune description.'}"
-                for cmd in commandes_slash[:10]
-            ]
-            embed.add_field(name="Quelques commandes slash", value="\n".join(lignes)[:1024], inline=False)
-            if len(commandes_slash) > 10:
-                embed.set_footer(text="Utilise !help-all pour afficher toutes les commandes.")
         await ctx.send(embed=embed)
 
     @commands.command(
