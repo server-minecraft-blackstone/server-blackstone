@@ -43,7 +43,7 @@ class BlackstoneBot(commands.Bot):
     def __init__(self) -> None:
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         # Centralise les erreurs des commandes slash sans bloquer le bot.
-        self.tree.on_error = self.on_app_command_error
+        self.tree.error(self.on_app_command_error)
         self.web_runner: web.AppRunner | None = None
 
     async def setup_hook(self) -> None:
