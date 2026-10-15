@@ -415,7 +415,7 @@ class Generateur(commands.Cog):
         if anthropic and os.getenv("ANTHROPIC_API_KEY"):
             self.client = anthropic.AsyncAnthropic(timeout=90.0)
         else:
-            print("ℹ️  /serveur_demande désactivée (ANTHROPIC_API_KEY ou paquet anthropic manquant). "
+            print("ℹ️  /demande désactivée (ANTHROPIC_API_KEY ou paquet anthropic manquant). "
                   "Les modèles fonctionnent normalement.")
 
     async def cog_unload(self):
@@ -443,16 +443,16 @@ class Generateur(commands.Cog):
 
     # ---------- Commandes ----------
 
-    @app_commands.command(name="serveur_modeles", description="Liste les modèles de serveur disponibles")
+    @app_commands.command(name="modeles", description="Liste les modèles de serveur disponibles")
     @app_commands.guild_only()
     async def serveur_modeles(self, interaction: discord.Interaction):
         texte = "\n".join(f"**{m['nom']}** : {m['description']}" for m in MODELES.values())
         await interaction.response.send_message(
-            texte + "\n\nUtilise `/serveur_modele` (admin) ou décris ton serveur avec `/serveur_demande`.",
+            texte + "\n\nUtilise `/modele` (admin) ou décris ton serveur avec `/demande`.",
             ephemeral=True,
         )
 
-    @app_commands.command(name="serveur_modele", description="Génère la structure du serveur depuis un modèle")
+    @app_commands.command(name="modele", description="Génère la structure du serveur depuis un modèle")
     @app_commands.describe(modele="Le modèle à appliquer")
     @app_commands.choices(modele=[app_commands.Choice(name=m["nom"], value=cle) for cle, m in MODELES.items()])
     @app_commands.guild_only()
@@ -465,7 +465,7 @@ class Generateur(commands.Cog):
         plan, avert = valider_plan(choisi["plan"], existants)
         await self.proposer(interaction, choisi["nom"], plan, avert, choisi["description"])
 
-    @app_commands.command(name="serveur_demande", description="Décris le serveur voulu, le bot le construit")
+    @app_commands.command(name="demande", description="Décris le serveur voulu, le bot le construit")
     @app_commands.describe(demande="Ex : serveur pour un clan Minecraft avec recrutement, builds et vocal par équipe")
     @app_commands.guild_only()
     @app_commands.default_permissions(administrator=True)
@@ -476,7 +476,7 @@ class Generateur(commands.Cog):
         if not self.client:
             return await interaction.response.send_message(
                 "La génération sur mesure n'est pas configurée (clé ANTHROPIC_API_KEY manquante). "
-                "Les modèles `/serveur_modele` restent disponibles.", ephemeral=True)
+                "Les modèles `/modele` restent disponibles.", ephemeral=True)
         await interaction.response.defer(ephemeral=True)
         try:
             reponse = await self.client.messages.create(
@@ -595,8 +595,8 @@ class Generateur(commands.Cog):
         if notes:
             bilan += "\n" + "\n".join(f"• {n}" for n in notes[:5])
         if erreur:
-            return f"⚠️ Interrompu : {erreur}\n{bilan}\n↩️ `/serveur_annuler` retire ce qui a été créé."
-        return f"✅ Serveur généré !\n{bilan}\n↩️ Pas content ? `/serveur_annuler` retire tout ce qui vient d'être créé."
+            return f"⚠️ Interrompu : {erreur}\n{bilan}\n↩️ `/annule` retire ce qui a été créé."
+        return f"✅ Serveur généré !\n{bilan}\n↩️ Pas content ? `/annule` retire tout ce qui vient d'être créé."
 
     # ---------- Annulation ----------
 
@@ -611,7 +611,7 @@ class Generateur(commands.Cog):
             [(guild_id, gen + 1, t, i) for t, i in elements])
         await self.db.commit()
 
-    @app_commands.command(name="serveur_annuler", description="Supprime ce que la dernière génération a créé")
+    @app_commands.command(name="annule", description="Supprime ce que la dernière génération a créé")
     @app_commands.guild_only()
     @app_commands.default_permissions(administrator=True)
     @app_commands.checks.has_permissions(administrator=True)
