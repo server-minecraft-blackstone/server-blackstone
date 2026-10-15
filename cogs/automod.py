@@ -12,7 +12,8 @@ from discord.ext import commands
 LISTES_GROS_MOTS = {
     "leger": {"connard", "connasse", "salope", "pute", "encule", "fdp", "ntm"},
     "modere": {"con", "conne", "connard", "connasse", "salope", "pute", "encule",
-               "enfoire", "fdp", "ntm", "merdeux", "raclure"},
+               "enfoire", "fdp", "ntm", "merdeux", "raclure", "merde", "putain",
+               "tg", "ta gueule", "nique ta mere", "trou du cul"},
     "strict": {"abruti", "idiot", "idiote", "debile", "imbecile", "cretin", "cretine",
                "con", "conne", "connard", "connasse", "salope", "pute", "encule",
                "enfoire", "ordure", "minable", "degenere", "attarde", "merdeux",
@@ -45,10 +46,13 @@ MESSAGES = {
 
 
 def normaliser(texte: str) -> str:
-    """Minuscules, sans accents, et remplace 0/4/1/3/5/@/$ par des lettres."""
+    """Normalise accents, substitutions courantes et ponctuation d'évitement."""
     texte = unicodedata.normalize("NFD", texte.lower())
     texte = "".join(c for c in texte if unicodedata.category(c) != "Mn")
-    return texte.translate(str.maketrans("04135@$", "oaiesas"))
+    texte = texte.translate(str.maketrans("04135@$", "oaiesas"))
+    # "p.u.t.e" / "p-u-t-e" devient "pute", sans fusionner les mots normaux.
+    texte = re.sub(r"(?<=[a-z])[._*~`|+\-]+(?=[a-z])", "", texte)
+    return texte
 
 
 class Automod(commands.Cog):
