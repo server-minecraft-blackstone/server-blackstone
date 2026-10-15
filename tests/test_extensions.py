@@ -2,9 +2,14 @@ import importlib
 import unittest
 
 from cogs.generateur import MODELES, valider_plan
+from main import BlackstoneBot
 
 
 class ExtensionTests(unittest.TestCase):
+    def test_bot_can_be_constructed(self):
+        bot = BlackstoneBot()
+        self.assertIsNotNone(bot.tree)
+
     def test_all_extensions_import(self):
         modules = (
             "cogs.automod",
