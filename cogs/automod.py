@@ -143,7 +143,7 @@ class Automod(commands.Cog):
 
     # ---------- Configuration par salon ----------
 
-    @app_commands.command(name="interdire", description="Interdit quelque chose dans un salon")
+    @app_commands.command(name="filtre_on", description="Interdit quelque chose dans un salon")
     @app_commands.describe(regle="Ce qui est interdit", salon="Le salon concerné")
     @app_commands.choices(regle=REGLES)
     @app_commands.guild_only()
@@ -159,7 +159,7 @@ class Automod(commands.Cog):
         self.regles.setdefault(salon.id, set()).add(regle.value)
         await interaction.response.send_message(f"🚫 {regle.name} interdites dans {salon.mention}.")
 
-    @app_commands.command(name="autoriser", description="Autorise quelque chose dans un salon")
+    @app_commands.command(name="filtre_off", description="Autorise quelque chose dans un salon")
     @app_commands.describe(regle="Ce qui est autorisé", salon="Le salon concerné")
     @app_commands.choices(regle=REGLES)
     @app_commands.guild_only()
@@ -174,7 +174,7 @@ class Automod(commands.Cog):
         self.regles.get(salon.id, set()).discard(regle.value)
         await interaction.response.send_message(f"✅ {regle.name} autorisées dans {salon.mention}.")
 
-    @app_commands.command(name="regles", description="Affiche les règles de chaque salon")
+    @app_commands.command(name="filtres", description="Affiche les règles de chaque salon")
     @app_commands.guild_only()
     async def regles_cmd(self, interaction: discord.Interaction):
         lignes = []
@@ -212,7 +212,7 @@ class Automod(commands.Cog):
             ephemeral=True,
         )
 
-    @app_commands.command(name="gros_mots_info", description="Affiche les niveaux de filtrage disponibles")
+    @app_commands.command(name="gros_mots_aide", description="Affiche les niveaux de filtrage disponibles")
     @app_commands.guild_only()
     async def gros_mots_liste(self, interaction: discord.Interaction):
         niveau = self.niveaux.get(interaction.guild_id, NIVEAU_PAR_DEFAUT)
@@ -231,7 +231,7 @@ class Automod(commands.Cog):
 
     # ---------- Liste de mots ----------
 
-    @app_commands.command(name="mot_ajouter", description="Ajoute un mot à la liste d'insultes")
+    @app_commands.command(name="mot_add", description="Ajoute un mot à la liste d'insultes")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -244,7 +244,7 @@ class Automod(commands.Cog):
         self.mots.setdefault(interaction.guild_id, set()).add(mot)
         await interaction.response.send_message("Mot ajouté.", ephemeral=True)
 
-    @app_commands.command(name="mot_retirer", description="Retire un mot ajouté à la liste")
+    @app_commands.command(name="mot_del", description="Retire un mot ajouté à la liste")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     @app_commands.checks.has_permissions(manage_guild=True)
