@@ -142,7 +142,10 @@ class Protection(commands.Cog):
 
         texte = nettoyer(message.content)
         automod = self.bot.get_cog("Automod")  # mots perso ajoutés avec /mot_ajouter
-        extra = frozenset(automod.mots.get(message.guild.id, set())) if automod else frozenset()
+        extra = frozenset(automod.liste_active(message.guild.id)) if automod else frozenset(INSULTES)
+        if automod:
+            # Conserve aussi les termes historiques de la protection.
+            extra = extra | frozenset(INSULTES)
 
         if detecte_menace(texte):
             await self.sanctionner(message, "menace")
