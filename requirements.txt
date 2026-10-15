@@ -1,4 +1,4 @@
-discord.py[voice]>=2.4
-python-dotenv
-aiosqlite
-anthropic
+discord.py[voice]>=2.4,<3.0
+python-dotenv>=1.0,<2.0
+aiosqlite>=0.19,<1.0
+anthropic>=0.40
