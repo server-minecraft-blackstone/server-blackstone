@@ -11,7 +11,7 @@ Toutes les fonctionnalités du bot sont accessibles avec des commandes slash (`/
 Variables à définir dans **Render → Environment** ou dans un fichier local `.env` :
 
 - `DISCORD_TOKEN` : jeton du bot Discord, obligatoire.
-- `ANTHROPIC_API_KEY` : facultative ; nécessaire uniquement pour `/serveur_demande`.
+- `ANTHROPIC_API_KEY` : facultative ; nécessaire uniquement pour `/demande`.
 - `CLAUDE_MODEL` : modèle Anthropic à utiliser, par défaut `claude-sonnet-5`.
 - `DATA_DIR` : facultative ; dossier de stockage SQLite. Pour conserver les réglages après un redéploiement, configure un disque persistant et indique son point de montage.
 - `LOG_LEVEL` : facultative, par défaut `INFO`.
